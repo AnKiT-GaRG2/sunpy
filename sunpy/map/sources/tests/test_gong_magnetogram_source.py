@@ -75,3 +75,17 @@ def test_rsun_obs(gong_magnetogram):
 def test_wcs(gong_magnetogram):
     # Smoke test that WCS is valid and can transform from pixels to world coordinates
     gong_magnetogram.wcs.pixel_to_world(0, 0)
+
+
+def test_scale_follows_resample(gong_magnetogram):
+    # The scale is derived from the limb fit until the map is resampled
+    # and the new pixel size is written to the header
+    n = gong_magnetogram.data.shape[0]
+    resampled = gong_magnetogram.resample([n // 2, n // 2] * u.pix)
+    superpixel = gong_magnetogram.superpixel([2, 2] * u.pix)
+    for new in (resampled, superpixel):
+        assert u.allclose(new.scale.axis1, 2 * gong_magnetogram.scale.axis1)
+        assert u.allclose(new.scale.axis2, 2 * gong_magnetogram.scale.axis2)
+        top_right = new.wcs.pixel_to_world(n / 2 - 0.5, n / 2 - 0.5)
+        original = gong_magnetogram.wcs.pixel_to_world(n - 0.5, n - 0.5)
+        assert u.allclose(top_right.Tx, original.Tx, rtol=1e-2)

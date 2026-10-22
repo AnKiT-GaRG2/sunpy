@@ -111,6 +111,10 @@ class GONGHalphaMap(GenericMap):
 
     @property
     def scale(self):
+        # The raw header has no CDELT, but it is set (and kept up to date) once the map is
+        # resampled or rebinned, so prefer it over the scale derived from the limb fit
+        if 'cdelt1' in self.meta and 'cdelt2' in self.meta:
+            return super().scale
         solar_r = self.meta['SOLAR-R'] * u.arcsec
         return SpatialPair(solar_r / (self.meta['FNDLMBMI'] * u.pixel),
                            solar_r/ (self.meta['FNDLMBMA'] * u.pixel))
@@ -203,6 +207,10 @@ class GONGMagnetogramMap(GenericMap):
 
     @property
     def scale(self):
+        # The raw header has no CDELT, but it is set (and kept up to date) once the map is
+        # resampled or rebinned, so prefer it over the scale derived from the limb fit
+        if 'cdelt1' in self.meta and 'cdelt2' in self.meta:
+            return super().scale
         solar_r = (self.meta['SEMIDIAM'] * u.rad).to(u.arcsec)
         return SpatialPair(solar_r / (self.meta['FNDLMBMI'] * u.pixel),
                            solar_r / (self.meta['FNDLMBMA'] * u.pixel))

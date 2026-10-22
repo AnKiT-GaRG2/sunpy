@@ -893,6 +893,18 @@ class GenericMap(MapMetaMixin, NDData):
 
 # #### Image processing routines #### #
 
+    def _add_missing_scale_keywords(self, meta):
+        """
+        Add ``CDELTi`` to ``meta`` if it holds no scale keywords.
+
+        Some maps derive `scale` from other keywords (e.g. the limb radius in pixels), so
+        rescaling the scale keywords of the header is not enough to rescale the map.
+        """
+        if {'cdelt1', 'cdelt2', 'cd1_1', 'cd1_2', 'cd2_1', 'cd2_2'} & meta.keys():
+            return
+        meta['cdelt1'] = self.scale[0].to_value(self.spatial_units[0] / u.pix)
+        meta['cdelt2'] = self.scale[1].to_value(self.spatial_units[1] / u.pix)
+
     @u.quantity_input
     def resample(self, dimensions: u.pixel, method='linear'):
         """
@@ -946,9 +958,10 @@ class GenericMap(MapMetaMixin, NDData):
         new_meta = self.meta.copy()
 
         # Update metadata
-        for key in {'cdelt1', 'cd1_1', 'cd2_1'} & self.meta.keys():
+        self._add_missing_scale_keywords(new_meta)
+        for key in {'cdelt1', 'cd1_1', 'cd2_1'} & new_meta.keys():
             new_meta[key] *= scale_factor_x
-        for key in {'cdelt2', 'cd1_2', 'cd2_2'} & self.meta.keys():
+        for key in {'cdelt2', 'cd1_2', 'cd2_2'} & new_meta.keys():
             new_meta[key] *= scale_factor_y
         if 'pc1_1' in self.meta:
             new_meta['pc1_2'] *= scale_factor_y / scale_factor_x
@@ -1488,9 +1501,10 @@ class GenericMap(MapMetaMixin, NDData):
         new_meta = self.meta.copy()
 
         # Update metadata
-        for key in {'cdelt1', 'cd1_1', 'cd2_1'} & self.meta.keys():
+        self._add_missing_scale_keywords(new_meta)
+        for key in {'cdelt1', 'cd1_1', 'cd2_1'} & new_meta.keys():
             new_meta[key] *= dimensions[0]
-        for key in {'cdelt2', 'cd1_2', 'cd2_2'} & self.meta.keys():
+        for key in {'cdelt2', 'cd1_2', 'cd2_2'} & new_meta.keys():
             new_meta[key] *= dimensions[1]
         if 'pc1_1' in self.meta:
             new_meta['pc1_2'] *= dimensions[1] / dimensions[0]
